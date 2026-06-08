@@ -1,17 +1,77 @@
 [
   {
-    "question": "Hình phạt cho tội tàng trữ trái phép chất ma tuý theo Điều 249 Bộ luật Hình sự?",
-    "expected_answer": "Phạt tù từ 1 đến 5 năm đối với trường hợp tàng trữ từ 1g đến dưới 5g heroin hoặc cocaine, hoặc chất ma tuý khác với khối lượng tương đương.",
-    "expected_context": "Bộ luật Hình sự 2015, Điều 249"
+    "question": "Điều 249 quy định gì về tội tàng trữ trái phép chất ma túy?",
+    "expected_answer": "Điều 249 quy định hành vi cất giữ trái phép chất ma túy không nhằm mục đích mua bán, vận chuyển hoặc sản xuất trái phép chất ma túy; khung cơ bản có thể bị phạt tù từ 01 năm đến 05 năm.",
+    "expected_context": "Bộ luật Hình sự 2015 sửa đổi 2017, Điều 249"
   },
   {
-    "question": "Luật Phòng chống ma tuý 2021 quy định những hình thức cai nghiện nào?",
-    "expected_answer": "Cai nghiện tự nguyện tại gia đình, cai nghiện tự nguyện tại cộng đồng, cai nghiện tự nguyện tại cơ sở cai nghiện, và cai nghiện bắt buộc tại cơ sở cai nghiện.",
-    "expected_context": "Luật Phòng chống ma tuý 2021, Chương V"
+    "question": "Hình phạt bổ sung của tội tàng trữ trái phép chất ma túy có thể gồm gì?",
+    "expected_answer": "Người phạm tội có thể bị phạt tiền, cấm đảm nhiệm chức vụ, cấm hành nghề hoặc làm công việc nhất định, hoặc bị tịch thu một phần hay toàn bộ tài sản.",
+    "expected_context": "Bộ luật Hình sự 2015 sửa đổi 2017, Điều 249"
   },
   {
-    "question": "Danh mục các chất ma tuý thuộc nhóm I theo quy định pháp luật Việt Nam gồm những chất nào?",
-    "expected_answer": "Nhóm I gồm các chất ma tuý tuyệt đối cấm sử dụng trong y học và đời sống, bao gồm heroin, cocaine, methamphetamine, MDMA (ecstasy), cannabis (cần sa), và các chất tương tự.",
-    "expected_context": "Nghị định 57/2022/NĐ-CP, Phụ lục I"
+    "question": "Điều 250 quy định khung cơ bản cho tội vận chuyển trái phép chất ma túy thế nào?",
+    "expected_answer": "Khung cơ bản của tội vận chuyển trái phép chất ma túy có thể bị phạt tù từ 02 năm đến 07 năm khi thỏa mãn dấu hiệu cấu thành và ngưỡng khối lượng theo quy định.",
+    "expected_context": "Bộ luật Hình sự 2015 sửa đổi 2017, Điều 250"
+  },
+  {
+    "question": "Điều 251 quy định khung hình phạt cơ bản cho mua bán trái phép chất ma túy ra sao?",
+    "expected_answer": "Khung cơ bản của hành vi mua bán trái phép chất ma túy bị phạt tù từ 02 năm đến 07 năm.",
+    "expected_context": "Bộ luật Hình sự 2015 sửa đổi 2017, Điều 251"
+  },
+  {
+    "question": "Các khung nặng của tội mua bán trái phép chất ma túy có thể lên đến mức nào?",
+    "expected_answer": "Các khung nặng có thể lên đến 15 năm, 20 năm, tù chung thân hoặc tử hình tùy chất ma túy, khối lượng, tình tiết tăng nặng và mức độ nguy hiểm.",
+    "expected_context": "Bộ luật Hình sự 2015 sửa đổi 2017, Điều 251"
+  },
+  {
+    "question": "Tội chiếm đoạt chất ma túy được quy định ở điều nào?",
+    "expected_answer": "Tội chiếm đoạt chất ma túy được quy định tại Điều 252 Bộ luật Hình sự 2015 sửa đổi 2017.",
+    "expected_context": "Bộ luật Hình sự 2015 sửa đổi 2017, Điều 252"
+  },
+  {
+    "question": "Luật Phòng, chống ma túy 2021 nghiêm cấm những hành vi nào?",
+    "expected_answer": "Luật nghiêm cấm trồng, sản xuất, tàng trữ, vận chuyển, mua bán, chiếm đoạt, sử dụng trái phép chất ma túy; tổ chức sử dụng trái phép chất ma túy; cưỡng bức hoặc lôi kéo người khác sử dụng trái phép chất ma túy.",
+    "expected_context": "Luật Phòng, chống ma túy 2021"
+  },
+  {
+    "question": "Các hình thức cai nghiện ma túy theo Luật Phòng, chống ma túy 2021 là gì?",
+    "expected_answer": "Các hình thức gồm cai nghiện tự nguyện tại gia đình, tự nguyện tại cộng đồng, tự nguyện tại cơ sở cai nghiện ma túy và cai nghiện bắt buộc tại cơ sở cai nghiện ma túy.",
+    "expected_context": "Luật Phòng, chống ma túy 2021, Chương V"
+  },
+  {
+    "question": "Gia đình có trách nhiệm gì trong phòng, chống ma túy?",
+    "expected_answer": "Gia đình có trách nhiệm giáo dục thành viên về tác hại của ma túy, quản lý và ngăn ngừa vi phạm, phối hợp với cơ quan tổ chức và hỗ trợ người cai nghiện.",
+    "expected_context": "Luật Phòng, chống ma túy 2021"
+  },
+  {
+    "question": "Cơ quan, tổ chức có trách nhiệm gì trong phòng, chống ma túy?",
+    "expected_answer": "Cơ quan, tổ chức có trách nhiệm tuyên truyền, giáo dục, phát hiện và ngăn chặn hành vi vi phạm pháp luật về ma túy, phối hợp với cơ quan chức năng và quản lý cán bộ, người lao động.",
+    "expected_context": "Luật Phòng, chống ma túy 2021"
+  },
+  {
+    "question": "Người sử dụng trái phép chất ma túy có thể bị quản lý như thế nào?",
+    "expected_answer": "Người sử dụng trái phép chất ma túy có thể bị quản lý để phòng ngừa tái sử dụng, đánh giá tình trạng nghiện và áp dụng biện pháp hỗ trợ, can thiệp, cai nghiện phù hợp.",
+    "expected_context": "Luật Phòng, chống ma túy 2021"
+  },
+  {
+    "question": "Nghị định 105/2021/NĐ-CP hướng dẫn những nội dung gì?",
+    "expected_answer": "Nghị định hướng dẫn một số nội dung của Luật Phòng, chống ma túy, gồm quản lý người sử dụng trái phép chất ma túy, xác định tình trạng nghiện, hồ sơ quản lý và trách nhiệm phối hợp.",
+    "expected_context": "Nghị định 105/2021/NĐ-CP"
+  },
+  {
+    "question": "Nghị định 57/2022/NĐ-CP dùng để làm gì trong quản lý ma túy?",
+    "expected_answer": "Nghị định 57/2022/NĐ-CP quy định các danh mục chất ma túy và tiền chất, làm căn cứ quản lý, kiểm soát và áp dụng pháp luật trong phòng, chống ma túy.",
+    "expected_context": "Nghị định 57/2022/NĐ-CP"
+  },
+  {
+    "question": "Tiền chất ma túy cần được kiểm soát như thế nào?",
+    "expected_answer": "Tiền chất là hóa chất có thể được dùng để sản xuất trái phép chất ma túy; hoạt động sản xuất, kinh doanh, xuất nhập khẩu, vận chuyển và sử dụng tiền chất phải được kiểm soát theo pháp luật.",
+    "expected_context": "Luật Phòng, chống ma túy 2021 và văn bản hướng dẫn"
+  },
+  {
+    "question": "Khi đọc tin nghệ sĩ liên quan đến ma túy cần kiểm chứng nguồn tin ra sao?",
+    "expected_answer": "Cần đối chiếu với nguồn chính thống như thông báo của công an, viện kiểm sát, tòa án hoặc văn bản pháp luật; tin đồn hoặc bài đăng mạng xã hội không đủ căn cứ để kết luận.",
+    "expected_context": "Tổng hợp tin tức pháp luật"
   }
 ]
