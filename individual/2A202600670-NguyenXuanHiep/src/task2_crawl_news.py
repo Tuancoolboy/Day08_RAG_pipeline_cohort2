@@ -13,6 +13,7 @@ Cài đặt:
 
 import asyncio
 import json
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -20,63 +21,107 @@ DATA_DIR = Path(__file__).parent.parent / "data" / "landing" / "news"
 
 
 def setup_directory():
-    """Tạo thư mục data/landing/news/ nếu chưa có."""
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# TODO: Điền danh sách URL bài báo cần crawl
 ARTICLE_URLS = [
-    # Ví dụ:
-    # "https://vnexpress.net/...",
-    # "https://tuoitre.vn/...",
-    # "https://thanhnien.vn/...",
+    "https://ngoisao.vnexpress.net/nhung-nghe-si-viet-nga-ngua-vi-ma-tuy-4816068.html",
+    "https://ngoisao.vnexpress.net/anh-em-ca-si-chi-dan-ru-nhieu-nguoi-choi-ma-tuy-nhu-the-nao-4929875.html",
+    "https://baobacninhtv.vn/dien-vien-hai-bi-tam-giu-vi-lien-quan-ma-tuy.bbg",
+    "https://vtcnews.vn/dong-thai-cua-miu-le-sau-khi-bi-dieu-tra-lien-quan-ma-tuy-ar1017516.html",
+    "https://vietnamnet.vn/nguoi-mau-an-tay-bi-giu-de-dieu-tra-lien-quan-tiec-ma-tuy-2340576.html",
 ]
 
 
-async def crawl_article(url: str) -> dict:
-    """
-    Crawl một bài báo và trả về dict chứa metadata + content.
+def _extract_title_from_markdown(markdown: str) -> str:
+    if not markdown:
+        return ""
+    for line in markdown.splitlines():
+        line = line.strip().lstrip("#").strip()
+        if line:
+            return line
+    return ""
 
-    Returns:
-        {
-            "url": str,
-            "title": str,
-            "date_crawled": str (ISO format),
-            "content_markdown": str
-        }
-    """
+
+async def crawl_article(url: str) -> dict:
     from crawl4ai import AsyncWebCrawler
 
-    # TODO: Implement crawling logic
-    # async with AsyncWebCrawler() as crawler:
-    #     result = await crawler.arun(url=url)
-    #     return {
-    #         "url": url,
-    #         "title": result.metadata.get("title", "Unknown"),
-    #         "date_crawled": datetime.now().isoformat(),
-    #         "content_markdown": result.markdown,
-    #     }
-    raise NotImplementedError("Implement crawl_article")
+    async with AsyncWebCrawler(headless=True, verbose=False) as crawler:
+        result = await crawler.arun(
+            url=url,
+            wait_for="body",
+            page_timeout=30000,
+            word_count_threshold=10,
+            excluded_tags=["nav", "footer", "header", "aside", "script", "style"],
+            exclude_external_links=True,
+        )
+
+        if not result.success:
+            print(f"  ✗ Failed: {url} — {result.error_message}")
+            return {
+                "url": url,
+                "title": "CRAWL_FAILED",
+                "date_crawled": datetime.now().isoformat(),
+                "content_markdown": "",
+                "error": result.error_message,
+            }
+
+        title = (
+            result.metadata.get("og:title")
+            or result.metadata.get("title")
+            or _extract_title_from_markdown(result.markdown)
+            or "Unknown"
+        )
+
+        return {
+            "url": url,
+            "title": title.strip(),
+            "date_crawled": datetime.now().isoformat(),
+            "content_markdown": result.markdown,
+        }
 
 
 async def crawl_all():
-    """Crawl toàn bộ bài báo trong ARTICLE_URLS."""
     setup_directory()
+    success_count = 0
 
     for i, url in enumerate(ARTICLE_URLS, 1):
         print(f"[{i}/{len(ARTICLE_URLS)}] Crawling: {url}")
-        article = await crawl_article(url)
+        try:
+            article = await crawl_article(url)
 
-        # Lưu file JSON
-        filename = f"article_{i:02d}.json"
-        filepath = DATA_DIR / filename
-        filepath.write_text(json.dumps(article, ensure_ascii=False, indent=2))
-        print(f"  ✓ Saved: {filepath}")
+            filename = f"article_{i:02d}.json"
+            filepath = DATA_DIR / filename
+            filepath.write_text(
+                json.dumps(article, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+
+            if article.get("title") != "CRAWL_FAILED":
+                success_count += 1
+                print(f"  ✓ Saved : {filepath}")
+                print(f"  ✓ Title : {article['title']}")
+            else:
+                print(f"  ✗ Saved with error: {filepath}")
+
+        except Exception as e:
+            print(f"  ✗ Exception: {e}")
+
+        await asyncio.sleep(1)
+
+    print(f"\n{'='*50}")
+    print(f"Hoàn thành: {success_count}/{len(ARTICLE_URLS)} bài crawl thành công.")
+    print(f"Dữ liệu lưu tại: {DATA_DIR.resolve()}")
 
 
 if __name__ == "__main__":
-    if not ARTICLE_URLS:
-        print("⚠ Hãy điền ARTICLE_URLS trước khi chạy!")
-        print("Gợi ý: tìm bài báo trên VnExpress, Tuổi Trẻ, Thanh Niên, ...")
+    # (Playwright cần subprocess, SelectorEventLoop không hỗ trợ)
+    if sys.platform == "win32":
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(crawl_all())
+        finally:
+            loop.close()
     else:
         asyncio.run(crawl_all())

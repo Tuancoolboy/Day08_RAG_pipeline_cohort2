@@ -13,50 +13,58 @@ Yêu cầu:
 def semantic_search(query: str, top_k: int = 10) -> list[dict]:
     """
     Tìm kiếm ngữ nghĩa sử dụng vector similarity.
-
-    Args:
-        query: Câu truy vấn
-        top_k: Số lượng kết quả tối đa
-
-    Returns:
-        List of {
-            'content': str,      # Nội dung chunk
-            'score': float,      # Cosine similarity score
-            'metadata': dict     # source, doc_type, chunk_index
-        }
-        Sorted by score descending.
     """
-    # TODO: Implement semantic search
-    #
-    # Bước 1: Embed query bằng cùng model ở Task 4
-    # Bước 2: Query vector store (cosine similarity)
-    # Bước 3: Return top_k results
-    #
-    # Ví dụ với Weaviate:
-    # import weaviate
-    # from sentence_transformers import SentenceTransformer
-    #
-    # model = SentenceTransformer("BAAI/bge-m3")
-    # query_embedding = model.encode(query).tolist()
-    #
-    # client = weaviate.connect_to_local()
-    # collection = client.collections.get("DrugLawDocs")
-    #
-    # results = collection.query.near_vector(
-    #     near_vector=query_embedding,
-    #     limit=top_k,
-    #     return_metadata=MetadataQuery(distance=True)
-    # )
-    #
-    # return [
-    #     {
-    #         "content": obj.properties["content"],
-    #         "score": 1 - obj.metadata.distance,  # distance → similarity
-    #         "metadata": {"source": obj.properties["source"], ...}
-    #     }
-    #     for obj in results.objects
-    # ]
-    raise NotImplementedError("Implement semantic_search")
+    import torch
+    import chromadb
+    from chromadb.config import Settings
+    from sentence_transformers import SentenceTransformer
+    from pathlib import Path
+
+    EMBEDDING_MODEL = "BAAI/bge-m3"
+    CHROMA_DB_PATH  = Path(__file__).parent.parent / "data" / "vectorstore"
+    COLLECTION_NAME = "drug_law_docs"
+
+    # Bước 1: Embed query bằng cùng model Task 4
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model  = SentenceTransformer(EMBEDDING_MODEL, device=device)
+
+    query_embedding = model.encode(
+        query,
+        normalize_embeddings=True,  # giống Task 4
+        convert_to_numpy=True,
+    ).tolist()
+
+    # Bước 2: Query ChromaDB
+    client = chromadb.PersistentClient(
+        path=str(CHROMA_DB_PATH),
+        settings=Settings(anonymized_telemetry=False),
+    )
+    collection = client.get_collection(COLLECTION_NAME)
+
+    results = collection.query(
+        query_embeddings=[query_embedding],
+        n_results=top_k,
+        include=["documents", "metadatas", "distances"],
+    )
+
+    # Bước 3: Format output — distance → similarity score
+    # ChromaDB cosine distance: score = 1 - distance
+    output = []
+    documents = results["documents"][0]
+    metadatas = results["metadatas"][0]
+    distances = results["distances"][0]
+
+    for doc, meta, dist in zip(documents, metadatas, distances):
+        output.append({
+            "content" : doc,
+            "score"   : round(1 - dist, 4),  # cosine similarity
+            "metadata": meta,
+        })
+
+    # Sắp xếp descending theo score
+    output.sort(key=lambda x: x["score"], reverse=True)
+
+    return output
 
 
 if __name__ == "__main__":

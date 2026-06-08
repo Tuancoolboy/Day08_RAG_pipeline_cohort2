@@ -10,85 +10,51 @@ Hướng dẫn:
 """
 
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
 
 from .task9_retrieval_pipeline import retrieve
 
-
 # =============================================================================
-# CONFIGURATION — Giải thích lựa chọn
+# CONFIGURATION
 # =============================================================================
 
-# top_k: Số chunks đưa vào context
-# Chọn 5 vì: đủ evidence mà không quá dài gây lost in the middle
-TOP_K = 5
-
-# top_p (nucleus sampling): Xác suất tích luỹ cho token generation
-# Chọn 0.9 vì: đủ diverse nhưng không quá random
-TOP_P = 0.9
-
-# temperature: Độ ngẫu nhiên của output
-# Chọn 0.3 vì: RAG cần factual, ít sáng tạo
+TOP_K       = 5
+TOP_P       = 0.9
 TEMPERATURE = 0.3
 
+GROQ_API_KEY   = os.getenv("GROQ_API_KEY",   "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+
+GROQ_MODELS = [
+    "llama-3.1-8b-instant", 
+    "llama3-8b-8192",  
+    "llama-3.3-70b-versatile", 
+    "mixtral-8x7b-32768", 
+]
+
+SYSTEM_PROMPT = """Bạn là trợ lý pháp lý chuyên về luật phòng chống ma tuý Việt Nam.
+Hãy trả lời câu hỏi bằng tiếng Việt, dựa HOÀN TOÀN vào context được cung cấp.
+
+Quy tắc bắt buộc:
+1. Mọi thông tin đều PHẢI có citation dạng [Document X | tên nguồn]
+2. Nếu context không đủ → trả lời: "Tôi không thể xác minh thông tin này từ nguồn hiện có."
+3. KHÔNG bịa đặt thông tin ngoài context
+4. Cấu trúc câu trả lời rõ ràng, có đoạn văn
+"""
+
 
 # =============================================================================
-# SYSTEM PROMPT
-# =============================================================================
-
-SYSTEM_PROMPT = """Answer the following question comprehensively in Vietnamese.
-For every statement of fact or claim, immediately insert a citation in brackets
-linking to the specific source (e.g., [Luật Phòng chống ma tuý 2021, Điều 3]
-or [VnExpress, 2024]).
-
-If the information is not explicitly stated in the provided context or knowledge
-base, state 'Tôi không thể xác minh thông tin này từ nguồn hiện có' rather than
-guessing.
-
-Rules:
-- Only use information from the provided context
-- Every factual claim MUST have a citation
-- If context is insufficient, say so clearly
-- Structure your answer with clear paragraphs"""
-
-
-# =============================================================================
-# DOCUMENT REORDERING (tránh lost in the middle)
+# DOCUMENT REORDERING
 # =============================================================================
 
 def reorder_for_llm(chunks: list[dict]) -> list[dict]:
-    """
-    Sắp xếp chunks để tránh "lost in the middle" effect.
-
-    LLM nhớ tốt thông tin ở ĐẦU và CUỐI prompt, quên thông tin ở GIỮA.
-    Strategy: đặt chunks quan trọng nhất ở đầu và cuối, kém quan trọng ở giữa.
-
-    Input order (by score):  [1, 2, 3, 4, 5]
-    Output order:            [1, 3, 5, 4, 2]
-    (best first, worst in middle, second-best last)
-
-    Args:
-        chunks: List sorted by score descending (from retrieval)
-
-    Returns:
-        List reordered để maximize LLM attention.
-    """
-    # TODO: Implement reordering
-    #
-    # if len(chunks) <= 2:
-    #     return chunks
-    #
-    # # Split into first half (important → đầu) and second half (important → cuối)
-    # reordered = []
-    # for i in range(0, len(chunks), 2):
-    #     reordered.append(chunks[i])  # Odd positions go first
-    # for i in range(len(chunks) - 1 - (len(chunks) % 2 == 0), 0, -2):
-    #     reordered.append(chunks[i])  # Even positions go last (reversed)
-    #
-    # return reordered
-    raise NotImplementedError("Implement reorder_for_llm")
+    """Tránh lost-in-the-middle: [1,2,3,4,5] → [1,3,5,4,2]"""
+    if len(chunks) <= 2:
+        return chunks
+    return chunks[::2] + chunks[1::2][::-1]
 
 
 # =============================================================================
@@ -96,28 +62,129 @@ def reorder_for_llm(chunks: list[dict]) -> list[dict]:
 # =============================================================================
 
 def format_context(chunks: list[dict]) -> str:
-    """
-    Format chunks thành context string cho prompt.
-    Mỗi chunk có label source để LLM có thể cite.
+    """Format chunks thành context string có source label."""
+    parts = []
+    for i, chunk in enumerate(chunks, 1):
+        meta = chunk.get("metadata", {})
+        parts.append(
+            f"[Document {i} | {meta.get('source', f'Source {i}')} "
+            f"| type={meta.get('type','unknown')} "
+            f"| score={chunk.get('score', 0.0):.4f}]\n"
+            f"{chunk['content'].strip()}"
+        )
+    return "\n\n---\n\n".join(parts)
 
-    Args:
-        chunks: List of {'content': str, 'metadata': dict, 'score': float}
 
-    Returns:
-        Formatted context string.
-    """
-    # TODO: Implement context formatting
-    #
-    # context_parts = []
-    # for i, chunk in enumerate(chunks, 1):
-    #     source = chunk.get("metadata", {}).get("source", f"Source {i}")
-    #     doc_type = chunk.get("metadata", {}).get("type", "unknown")
-    #     context_parts.append(
-    #         f"[Document {i} | Source: {source} | Type: {doc_type}]\n"
-    #         f"{chunk['content']}\n"
-    #     )
-    # return "\n---\n".join(context_parts)
-    raise NotImplementedError("Implement format_context")
+# =============================================================================
+# LLM CALLERS
+# =============================================================================
+
+def _call_groq(prompt: str) -> str:
+    """Gọi Groq API với retry + sleep."""
+    from groq import Groq
+
+    client     = Groq(api_key=GROQ_API_KEY)
+    last_error = None
+
+    for model in GROQ_MODELS:
+        # Mỗi model thử tối đa 3 lần
+        for attempt in range(3):
+            try:
+                print(f"    [Groq] {model} (attempt {attempt+1}) ...")
+                resp = client.chat.completions.create(
+                    model       = model,
+                    messages    = [
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user",   "content": prompt},
+                    ],
+                    temperature = TEMPERATURE,
+                    top_p       = TOP_P,
+                    max_tokens  = 512, 
+                )
+                print(f"    [Groq] ✓ {model} OK")
+                return resp.choices[0].message.content.strip()
+
+            except Exception as e:
+                err = str(e)
+
+                # Model bị xoá → bỏ qua, không retry
+                if "decommissioned" in err or "not found" in err or "404" in err:
+                    print(f"    [Groq] ✗ {model} decommissioned → skip")
+                    break
+
+                # Rate limit → sleep rồi retry
+                if any(x in err for x in ["429", "rate", "quota", "limit"]):
+                    wait = 10 * (attempt + 1) 
+                    print(f"    [Groq] ⚠ rate limit → sleep {wait}s ...")
+                    time.sleep(wait)
+                    last_error = e
+                    continue
+
+                # Lỗi khác → raise ngay
+                raise
+
+    raise RuntimeError(f"Tất cả Groq models thất bại: {last_error}")
+
+
+def _call_gemini(prompt: str) -> str:
+    """Gọi Gemini API."""
+    import google.generativeai as genai
+
+    genai.configure(api_key=GEMINI_API_KEY)
+
+    # Lấy model list thực tế
+    try:
+        available = [
+            m.name.replace("models/", "")
+            for m in genai.list_models()
+            if "generateContent" in m.supported_generation_methods
+        ]
+    except Exception:
+        available = []
+
+    preferred = [
+        "gemini-2.0-flash-lite", "gemini-2.0-flash",
+        "gemini-1.5-flash-latest", "gemini-1.5-flash-8b",
+    ]
+    models = [m for m in preferred if m in available] or preferred
+    last_error = None
+
+    for model_name in models:
+        try:
+            print(f"    [Gemini] Trying: {model_name} ...")
+            m    = genai.GenerativeModel(
+                model_name         = model_name,
+                system_instruction = SYSTEM_PROMPT,
+                generation_config  = genai.GenerationConfig(
+                    temperature=TEMPERATURE, top_p=TOP_P, max_output_tokens=2048
+                ),
+            )
+            resp = m.generate_content(prompt)
+            print(f"    [Gemini] ✓ {model_name} OK")
+            return resp.text.strip()
+        except Exception as e:
+            err = str(e)
+            if any(x in err for x in ["429", "404", "quota", "not found"]):
+                print(f"    [Gemini] ⚠ {model_name}: skip → {err[:60]}")
+                last_error = e
+                continue
+            raise
+
+    raise RuntimeError(f"Tất cả Gemini models thất bại: {last_error}")
+
+
+def _call_llm(prompt: str) -> str:
+    """Groq trước → Gemini fallback."""
+    if GROQ_API_KEY:
+        try:
+            return _call_groq(prompt)
+        except Exception as e:
+            print(f"  ⚠ Groq thất bại: {e}")
+
+    if GEMINI_API_KEY:
+        return _call_gemini(prompt)
+
+    raise ValueError("Cần GROQ_API_KEY hoặc GEMINI_API_KEY trong .env")
 
 
 # =============================================================================
@@ -125,77 +192,44 @@ def format_context(chunks: list[dict]) -> str:
 # =============================================================================
 
 def generate_with_citation(query: str, top_k: int = TOP_K) -> dict:
-    """
-    End-to-end RAG generation có citation.
+    """End-to-end RAG generation có citation."""
+    print(f"  [Debug] GROQ_API_KEY  : {'SET ✓' if GROQ_API_KEY   else 'EMPTY ✗'}")
+    print(f"  [Debug] GEMINI_API_KEY: {'SET ✓' if GEMINI_API_KEY else 'EMPTY ✗'}")
 
-    Pipeline:
-        1. Retrieve relevant chunks
-        2. Reorder để tránh lost in the middle
-        3. Format context với source labels
-        4. Build prompt (system + context + query)
-        5. Call LLM
-        6. Return answer + sources
+    # Step 1: Retrieve
+    print(f"  [1/4] Retrieving top {top_k} chunks ...")
+    chunks = retrieve(query, top_k=top_k)
 
-    Args:
-        query: Câu hỏi của user
-
-    Returns:
-        {
-            'answer': str,           # Câu trả lời có citation
-            'sources': list[dict],   # Các chunks đã dùng
-            'retrieval_source': str  # 'hybrid' hoặc 'pageindex'
+    if not chunks:
+        return {
+            "answer"          : "Tôi không thể xác minh thông tin này từ nguồn hiện có.",
+            "sources"         : [],
+            "retrieval_source": "none",
         }
-    """
-    # TODO: Implement generation pipeline
-    #
-    # # Step 1: Retrieve
-    # chunks = retrieve(query, top_k=top_k)
-    #
-    # # Step 2: Reorder
-    # reordered = reorder_for_llm(chunks)
-    #
-    # # Step 3: Format context
-    # context = format_context(reordered)
-    #
-    # # Step 4: Build prompt
-    # user_message = f"""Context:\n{context}\n\n---\n\nQuestion: {query}"""
-    #
-    # # Step 5: Call LLM
-    # from openai import OpenAI
-    # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    #
-    # response = client.chat.completions.create(
-    #     model="gpt-4o-mini",
-    #     messages=[
-    #         {"role": "system", "content": SYSTEM_PROMPT},
-    #         {"role": "user", "content": user_message}
-    #     ],
-    #     temperature=TEMPERATURE,
-    #     top_p=TOP_P,
-    # )
-    #
-    # answer = response.choices[0].message.content
-    #
-    # # Step 6: Return
-    # return {
-    #     "answer": answer,
-    #     "sources": chunks,
-    #     "retrieval_source": chunks[0].get("source", "hybrid") if chunks else "none"
-    # }
-    raise NotImplementedError("Implement generate_with_citation")
+
+    retrieval_source = chunks[0].get("source", "hybrid")
+
+    # Step 2: Reorder
+    reordered = reorder_for_llm(chunks)
+
+    # Step 3: Format
+    context = format_context(reordered)
+    user_message = (
+        f"Context:\n\n{context}\n\n{'─'*60}\n\nCâu hỏi: {query}"
+    )
+
+    # Step 4: Call LLM
+    print(f"  [4/4] Calling LLM ...")
+    answer = _call_llm(user_message)
+    print(f"  ✓ Generated {len(answer)} ký tự.")
+
+    return {
+        "answer"          : answer,
+        "sources"         : chunks,
+        "retrieval_source": retrieval_source,
+    }
 
 
 if __name__ == "__main__":
-    test_queries = [
-        "Hình phạt cho tội tàng trữ trái phép chất ma tuý theo pháp luật Việt Nam?",
-        "Những nghệ sĩ nào đã bị bắt vì liên quan tới ma tuý?",
-        "Quy trình cai nghiện bắt buộc theo Luật Phòng chống ma tuý 2021?",
-    ]
-
-    for q in test_queries:
-        print(f"\n{'='*70}")
-        print(f"Q: {q}")
-        print("=" * 70)
-        result = generate_with_citation(q)
-        print(f"\nA: {result['answer']}")
-        print(f"\n[Sources: {len(result['sources'])} chunks | via {result['retrieval_source']}]")
+    result = generate_with_citation("Hình phạt tàng trữ ma tuý?")
+    print(f"\nA:\n{result['answer']}")
