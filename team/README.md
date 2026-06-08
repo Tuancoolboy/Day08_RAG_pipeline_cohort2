@@ -1,204 +1,242 @@
-# Bài Tập Nhóm — Search Engine / RAG Chatbot
+# Bài Tập Nhóm — Vite RAG Chatbot
 
 ## Mục Tiêu
 
-Sau khi hoàn thành bài cá nhân, nhóm ngồi lại để xây dựng **1 trong 2 sản phẩm**:
+Xây dựng RAG Chatbot hỏi đáp về pháp luật ma túy và tin tức liên quan.
 
----
+Stack hiện tại:
 
-## Yêu cầu 1:  Sản phẩm nhóm RAG Chatbot
-
-Xây dựng chatbot trả lời câu hỏi về pháp luật ma tuý và tin tức liên quan.
-
-**Yêu cầu:**
-- Giao diện chat (Streamlit / Gradio / Chainlit)
-- Trả lời có citation (dựa trên Task 10)
-- Hỗ trợ follow-up questions (conversation memory)
-- Hiển thị source documents đã dùng
-
-**Stack gợi ý:**
-```
-Chainlit/Streamlit → Retrieval (Task 9) → Generation (Task 10) → Display
+```text
+Vite React UI → FastAPI Backend → Retrieval + Vector DB → Generation → Citation Display
 ```
 
----
+Sản phẩm có:
 
-## Yêu cầu 2: RAG Evaluation Pipeline
-
-Sử dụng **1 trong 3 framework** sau để evaluate pipeline RAG của nhóm:
-
-### Framework lựa chọn
-
-| Framework | Cài đặt | Đặc điểm |
-|-----------|---------|-----------|
-| [DeepEval](https://github.com/confident-ai/deepeval) | `pip install deepeval` | Nhiều metric built-in, dễ integrate với pytest |
-| [RAGAS](https://github.com/explodinggradients/ragas) | `pip install ragas` | Chuẩn industry cho RAG eval, 3 trục chính |
-| [TruLens](https://github.com/truera/trulens) | `pip install trulens` | Dashboard UI, feedback functions mạnh |
-
-### Yêu cầu Evaluation
-
-1. **Tạo Golden Dataset** — tối thiểu 15 cặp Q&A (question, expected_answer, expected_context)
-2. **Chạy evaluation** trên toàn bộ golden dataset với các metrics sau:
-   - **Faithfulness** — câu trả lời có bám đúng context không?
-   - **Answer Relevance** — câu trả lời có đúng câu hỏi không?
-   - **Context Recall** — retriever có lấy đủ evidence không?
-   - **Context Precision** — trong context lấy về, bao nhiêu % thực sự hữu ích?
-3. **So sánh A/B** — chạy eval trên ít nhất 2 config khác nhau (ví dụ: có reranking vs không reranking, hoặc hybrid vs dense-only)
-4. **Báo cáo** — bảng điểm + phân tích worst performers + đề xuất cải tiến
-
-### Code mẫu — DeepEval
-
-```python
-from deepeval import evaluate
-from deepeval.metrics import (
-    FaithfulnessMetric,
-    AnswerRelevancyMetric,
-    ContextualRecallMetric,
-    ContextualPrecisionMetric,
-)
-from deepeval.test_case import LLMTestCase
-
-# Tạo test cases từ golden dataset
-test_cases = []
-for item in golden_dataset:
-    result = rag_pipeline.generate_with_citation(item["question"])
-    test_case = LLMTestCase(
-        input=item["question"],
-        actual_output=result["answer"],
-        expected_output=item["expected_answer"],
-        retrieval_context=[c["content"] for c in result["sources"]],
-    )
-    test_cases.append(test_case)
-
-# Chạy evaluation
-metrics = [
-    FaithfulnessMetric(threshold=0.7),
-    AnswerRelevancyMetric(threshold=0.7),
-    ContextualRecallMetric(threshold=0.7),
-    ContextualPrecisionMetric(threshold=0.7),
-]
-
-results = evaluate(test_cases, metrics)
-```
-
-### Code mẫu — RAGAS
-
-```python
-from ragas import evaluate
-from ragas.metrics import (
-    faithfulness,
-    answer_relevancy,
-    context_recall,
-    context_precision,
-)
-from datasets import Dataset
-
-# Chuẩn bị data
-eval_data = {
-    "question": [],
-    "answer": [],
-    "contexts": [],
-    "ground_truth": [],
-}
-
-for item in golden_dataset:
-    result = rag_pipeline.generate_with_citation(item["question"])
-    eval_data["question"].append(item["question"])
-    eval_data["answer"].append(result["answer"])
-    eval_data["contexts"].append([c["content"] for c in result["sources"]])
-    eval_data["ground_truth"].append(item["expected_answer"])
-
-dataset = Dataset.from_dict(eval_data)
-
-# Chạy evaluation
-result = evaluate(
-    dataset,
-    metrics=[faithfulness, answer_relevancy, context_recall, context_precision],
-)
-print(result.to_pandas())
-```
-
-### Code mẫu — TruLens
-
-```python
-from trulens.apps.custom import TruCustomApp, instrument
-from trulens.core import Feedback
-from trulens.providers.openai import OpenAI as TruOpenAI
-
-provider = TruOpenAI()
-
-# Define feedback functions
-f_faithfulness = Feedback(provider.groundedness_measure_with_cot_reasons).on_output()
-f_relevance = Feedback(provider.relevance).on_input_output()
-f_context_relevance = Feedback(provider.context_relevance).on_input()
-
-# Wrap RAG pipeline
-tru_rag = TruCustomApp(
-    rag_pipeline,
-    app_name="DrugLaw_RAG",
-    feedbacks=[f_faithfulness, f_relevance, f_context_relevance],
-)
-
-# Run evaluation
-with tru_rag as recording:
-    for item in golden_dataset:
-        rag_pipeline.generate_with_citation(item["question"])
-
-# View dashboard
-from trulens.dashboard import run_dashboard
-run_dashboard()
-```
-
-### Deliverable Evaluation
-
-- [ ] File `team/evaluation/golden_dataset.json` — 15+ cặp Q&A
-- [ ] File `team/evaluation/eval_pipeline.py` — script chạy evaluation
-- [ ] File `team/evaluation/results.md` — bảng điểm + phân tích
-- [ ] So sánh A/B ít nhất 2 configs
-
----
-
-## Yêu Cầu Chung
-
-1. **Tích hợp pipeline** từ bài cá nhân của các thành viên
-2. **Demo hoạt động được** trong buổi trình bày (chạy local hoặc deploy)
-3. **Evaluation pipeline** chạy được và có báo cáo kết quả
-4. **Code push lên repository** chung của nhóm
-5. **README** mô tả kiến trúc và phân công (điền bên dưới)
-
----
+- Website Vite React chạy localhost.
+- FastAPI backend không expose API key ra browser.
+- Local persisted vector database.
+- Hybrid/vector retrieval + reranking.
+- OpenAI generation nếu có `OPENAI_API_KEY`.
+- Local fallback generation nếu chưa có key.
+- Evaluation pipeline 15 Q&A với A/B comparison.
 
 ## Kiến Trúc Hệ Thống
 
+```text
+Vite React UI (team/web/)
+  │
+  └─→ FastAPI Backend (team/api.py)
+        │
+        ├─→ Retrieval Pipeline (team/src/retrieval.py)
+        │     ├─ Local Vector DB (team/vector_store/index.json)
+        │     ├─ Lightweight lexical score
+        │     ├─ Lightweight semantic score
+        │     ├─ Hybrid vector merge
+        │     └─ Reranking
+        │
+        ├─→ Generation Service (team/src/generation.py)
+        │     ├─ OpenAI nếu có OPENAI_API_KEY
+        │     └─ Local fallback nếu thiếu key/API lỗi
+        │
+        └─→ JSON response
+              ├─ Answer
+              ├─ Citations
+              ├─ Source documents
+              └─ Relevance scores
+
+Evaluation (team/evaluation/eval_pipeline.py)
+  ├─ Golden dataset 15 Q&A
+  ├─ Metrics: faithfulness, answer relevance, context recall, context precision
+  └─ A/B: hybrid_vector_rerank vs vector_only vs hybrid_rerank vs dense_only
 ```
-[Vẽ diagram kiến trúc ở đây]
+
+## API Contract
+
+Backend chạy tại `http://localhost:8000`.
+
+Endpoints:
+
+```text
+GET  /api/health
+GET  /api/vector-store
+POST /api/chat
 ```
 
----
+Request `POST /api/chat`:
 
-## Phân Công Công Việc
+```json
+{
+  "query": "Điều 249 quy định gì?",
+  "top_k": 5,
+  "retrieval_mode": "hybrid_vector",
+  "use_reranking": true,
+  "use_openai": true
+}
+```
 
-| Thành viên | MSSV | Nhiệm vụ | Trạng thái |
-|-----------|------|----------|------------|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+Response:
 
----
+```json
+{
+  "answer": "string",
+  "sources": [
+    {
+      "content": "string",
+      "score": 0.0,
+      "metadata": {
+        "id": "string",
+        "title": "string",
+        "source": "string",
+        "year": "string",
+        "doc_type": "string"
+      }
+    }
+  ],
+  "metadata": {
+    "mode": "openai | local_fallback | no_context",
+    "retrieval_mode": "hybrid_vector",
+    "use_reranking": true
+  }
+}
+```
 
-## Hướng Dẫn Chạy
+## Cài Đặt
 
 ```bash
-# Cài đặt dependencies
 pip install -r requirements.txt
-
-# Chạy app
-streamlit run app.py
-# hoặc
-chainlit run app.py
 ```
 
----
+Tạo `.env` cho backend:
 
-## Lưu ý: Hãy giữ lại repo này nếu như bạn học track 3 giai đoạn 2, chúng ta sẽ phát triển tiếp dự án lên knowledge graph để khắc phục các câu hỏi hóc búa khi có các câu hỏi khó.
+```bash
+cp .env.example .env
+```
+
+Ví dụ:
+
+```env
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_TIMEOUT_SECONDS=30
+```
+
+Nếu chưa có `OPENAI_API_KEY`, app vẫn demo được bằng local fallback generation.
+
+## Build Vector Database
+
+```bash
+python3 team/scripts/build_vector_index.py
+```
+
+Output:
+
+```text
+team/vector_store/index.json
+```
+
+Retrieval modes:
+
+- `hybrid_vector`: vector DB + lexical + semantic + reranking.
+- `vector`: chỉ dùng vector DB.
+- `hybrid`: lexical + semantic, không dùng vector DB.
+- `dense_only`: semantic-style score.
+- `lexical_only`: lexical score.
+
+## Chạy Localhost
+
+Terminal 1, chạy backend:
+
+```bash
+uvicorn team.api:app --reload --port 8000
+```
+
+Terminal 2, chạy frontend:
+
+```bash
+cd team/web
+npm install
+npm run dev
+```
+
+Mở website:
+
+```text
+http://localhost:5173
+```
+
+Nếu cần đổi backend URL cho frontend:
+
+```bash
+cp team/web/.env.example team/web/.env
+```
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+Frontend không đọc `OPENAI_API_KEY` và không gọi OpenAI trực tiếp. API key chỉ nằm trong `.env` của backend Python.
+
+## Evaluation
+
+```bash
+python3 team/evaluation/eval_pipeline.py
+```
+
+Kết quả được ghi vào:
+
+```text
+team/evaluation/results.md
+```
+
+Metrics:
+
+- Faithfulness.
+- Answer relevance.
+- Context recall.
+- Context precision.
+
+## Test
+
+```bash
+python3 -m unittest discover team/tests -v
+python3 -m compileall team/src team/api.py team/evaluation/eval_pipeline.py
+```
+
+API smoke test:
+
+```bash
+curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"query":"Điều 249 quy định gì?","top_k":5,"retrieval_mode":"hybrid_vector","use_reranking":true,"use_openai":false}'
+```
+
+Frontend build:
+
+```bash
+cd team/web
+npm run build
+```
+
+## Files Chính
+
+- `team/api.py`: FastAPI backend cho Vite UI.
+- `team/web/`: Vite React frontend.
+- `team/data/knowledge_base.json`: knowledge base demo.
+- `team/scripts/build_vector_index.py`: build local vector database.
+- `team/vector_store/index.json`: persisted vector database.
+- `team/src/retrieval.py`: hybrid/vector retrieval + reranking.
+- `team/src/vector_store.py`: local vector DB build/search/status.
+- `team/src/pipeline.py`: end-to-end RAG pipeline.
+- `team/src/generation.py`: OpenAI generation + error handling.
+- `team/evaluation/eval_pipeline.py`: evaluation offline + A/B comparison.
+- `team/evaluation/results.md`: kết quả evaluation đã export.
+
+## Phân Công
+
+| Người | Thành viên | Mảng phụ trách | File nên submit |
+|------|------------|----------------|-----------------|
+| Người 1 | Bùi Ngọc Khánh | API + pipeline backend | `team/api.py`, `team/src/config.py`, `team/src/pipeline.py`, `team/__init__.py` |
+| Người 2 | Nguyễn Xuân Hiệp | Retrieval + vector store | `team/src/retrieval.py`, `team/src/vector_store.py`, `team/scripts/build_vector_index.py`, `team/vector_store/index.json` |
+| Người 3 | Nguyễn Quang Huy | Generation + citation + OpenAI fallback | `team/src/generation.py`, một phần test trong `team/tests/test_openai_generation.py` |
+| Người 4 | Vũ Hải Tuấn | Frontend Vite React UI | `team/web/src/main.jsx`, `team/web/src/styles.css`, `team/web/package.json`, `team/web/package-lock.json`, `team/web/vite.config.js`, `team/web/index.html`, `team/web/.env.example` |
+| Người 5 | Nguyễn Văn Dương | Data + evaluation + documentation | `team/data/knowledge_base.json`, `team/evaluation/golden_dataset.json`, `team/evaluation/eval_pipeline.py`, `team/evaluation/results.md`, `team/README.md` |
