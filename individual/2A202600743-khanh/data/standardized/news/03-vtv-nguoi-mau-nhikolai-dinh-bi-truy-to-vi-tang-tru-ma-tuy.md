@@ -1,0 +1,36 @@
+# Nguoi mau Nhikolai Dinh bi truy to vi tang tru ma tuy
+
+**Source:** https://vtv.vn/phap-luat/nguoi-mau-nhikolai-dinh-bi-truy-to-vi-tang-tru-ma-tuy-20250220164328343.htm
+**Source name:** vtv
+**Crawled:** 2026-06-08T07:39:40.026542+00:00
+
+---
+Người mẫu Nhikolai Đinh bị truy tố vì tàng trữ ma túy
+
+20/02/2025 17:18 GMT+7
+
+VTV.vn - Nhikolai Đinh (30 tuổi), người mẫu mang hai dòng máu Việt - Nga, vừa bị truy tố về tội "Tàng trữ trái phép chất ma túy".
+
+Viện Kiểm sát Nhân dân Quận 1, TP Hồ Chí Minh vừa ban hành cáo trạng truy tố Đinh Nhikolai và 12 bị can khác về các tội "mua bán trái phép chất ma túy" và "tàng trữ trái phép chất ma túy".
+
+Trong vụ án này, 3 mẹ con bị can gồm Trịnh Thị Hòa (56 tuổi) cùng hai con trai là Trịnh Bá Hào (36 tuổi) và Trịnh Bá Hóa (34 tuổi) bị truy tố về tội "mua bán trái phép chất ma túy", với khung hình phạt từ 7 đến 15 năm tù.
+
+Riêng Đinh Nhikolai và 9 bị can khác bị truy tố về tội "tàng trữ trái phép chất ma túy", với khối lượng Methamphetamine từ 0,1 gam đến dưới 5 gam, đối diện mức án từ 1 đến 5 năm tù.
+
+Nhikolai Đinh (bên trái) diễn tả lại cảnh mua ma túy từ đối tượng Trịnh Bá Hóa (con trai của Trịnh Thị Hòa). Ảnh: CA
+
+Theo cáo trạng, tháng 6/2024, trong quá trình tuần tra, Công an quận 1 phát hiện Nhikolai Đinh và một số người có biểu hiện nghi vấn liên quan đến ma túy. Khi kiểm tra, lực lượng chức năng thu giữ tang vật là 0,1 gram ma túy đá.
+
+Nam người mẫu khai nhận ngày 13/6/2024 đã mua số ma túy trên từ Trịnh Bá Hóa với giá 250.000 đồng để sử dụng, nhưng chưa kịp dùng thì bị bắt.
+
+Mở rộng điều tra, Công an Quận 1 bắt 3 mẹ con bị can Trịnh Thị Hòa, Trịnh Bá Hào, Trịnh Bá Hòa và nhiều người khác về hành vi mua bán ma túy. Theo lời khai, bà Hòa mua ma túy từ người không rõ lai lịch rồi chia nhỏ, giao cho 2 con trai để buôn bán kiếm lợi.
+
+Nhikolai Đinh từng tham gia một số chương trình truyền hình thực tế về người mẫu và được nhiều người biết đến với biệt danh "Nam thần lai Nga" với chiều cao hơn 190cm. Nhikolai Đinh cũng từng là gương mặt quen thuộc trên các sàn diễn thời trang, MV ca nhạc.
+
+Giấy phép hoạt động báo in và báo điện tử số
+
+Ðiện thoại Thời báo VTV:
+
+® Cấm sao chép dưới mọi hình thức nếu không có sự chấp thuận bằng văn bản. Ghi rõ nguồn VTV.vn khi phát hành lại thông tin từ website này.
+
+Bình luận không đăng nhập
