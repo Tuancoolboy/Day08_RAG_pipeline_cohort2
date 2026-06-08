@@ -1,0 +1,79 @@
+{
+  "mode": "local_vectorless_fallback",
+  "pageindex_api_key_present": false,
+  "document_count": 9,
+  "documents": [
+    {
+      "metadata": {
+        "filename": "luat phong chong ma tuy 120-2025-QH15.md",
+        "path": "legal/luat phong chong ma tuy 120-2025-QH15.md",
+        "type": "legal"
+      },
+      "char_count": 114
+    },
+    {
+      "metadata": {
+        "filename": "quy dinh danh muc chat cam 28-2026.md",
+        "path": "legal/quy dinh danh muc chat cam 28-2026.md",
+        "type": "legal"
+      },
+      "char_count": 111
+    },
+    {
+      "metadata": {
+        "filename": "thi hanh luat phong chong ma tuy thang 1 năm 2026.md",
+        "path": "legal/thi hanh luat phong chong ma tuy thang 1 năm 2026.md",
+        "type": "legal"
+      },
+      "char_count": 126
+    },
+    {
+      "metadata": {
+        "filename": "article_01.md",
+        "path": "news/article_01.md",
+        "type": "news"
+      },
+      "char_count": 9110
+    },
+    {
+      "metadata": {
+        "filename": "article_02.md",
+        "path": "news/article_02.md",
+        "type": "news"
+      },
+      "char_count": 13735
+    },
+    {
+      "metadata": {
+        "filename": "article_03.md",
+        "path": "news/article_03.md",
+        "type": "news"
+      },
+      "char_count": 6471
+    },
+    {
+      "metadata": {
+        "filename": "article_04.md",
+        "path": "news/article_04.md",
+        "type": "news"
+      },
+      "char_count": 37670
+    },
+    {
+      "metadata": {
+        "filename": "article_05.md",
+        "path": "news/article_05.md",
+        "type": "news"
+      },
+      "char_count": 317
+    },
+    {
+      "metadata": {
+        "filename": "article_06.md",
+        "path": "news/article_06.md",
+        "type": "news"
+      },
+      "char_count": 5456
+    }
+  ]
+}
